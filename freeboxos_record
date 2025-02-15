@@ -1,0 +1,8 @@
+/var/log/select_freeboxos/cron_curl.log /var/log/select_freeboxos/cron_freeboxos.log /var/log/select_freeboxos/auto_update.log {
+    monthly
+    rotate 12
+    compress
+    missingok
+    notifempty
+    create 0640 seluser seluser
+}
