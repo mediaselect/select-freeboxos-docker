@@ -1,4 +1,4 @@
-FROM selenium/standalone-firefox:134.0-geckodriver-0.35-grid-4.28.1-20250202
+FROM selenium/standalone-firefox:131.0-geckodriver-0.35-grid-4.25.0-20241024
 
 LABEL org.opencontainers.image.title="select-freeboxos"
 LABEL org.opencontainers.image.description="Automated Freebox OS interactions using Selenium."
