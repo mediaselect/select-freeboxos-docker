@@ -29,7 +29,7 @@ RUN virtualenv -p python3 /home/seluser/.venv \
     && mkdir -p /home/seluser/.config/select_freeboxos \
     && mkdir -p /var/log/select_freeboxos \
     && chown -R seluser:seluser /home/seluser/.local/share/select_freeboxos \
-    && chown -R seluser:seluser /home/seluser/.config/select_freeboxos \
+    && chown -R seluser:seluser /home/seluser/.config/ \
     && chown -R seluser:seluser /var/log/select_freeboxos \
     && cp freeboxos_record /etc/logrotate.d/freeboxos_record \
     && ln -s /home/seluser/.config/select_freeboxos/.netrc /home/seluser/.netrc \
