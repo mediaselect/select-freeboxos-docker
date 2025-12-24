@@ -125,7 +125,7 @@ if crypted.lower() == "non":
                     "est différent de celui de la Freebox server.\n")
             if title is not None:
                 print("\nLe programme a détecté comme nom possible de votre "
-                    "routeur la valeur suivante: " + title + "\n")
+                    f"routeur la valeur suivante: {title}\n")
             else:
                 print("\nLe programme n'a pas détecté le nom de votre routeur.\n")
             if repeat:
@@ -162,7 +162,7 @@ if crypted.lower() == "non":
                 FREEBOX_SERVER_IP = stdout.split()[2]
 
                 print("\nLe programme a détecté que votre routeur "
-                    "a l'adresse ip " + FREEBOX_SERVER_IP + "\n\nLe programme va "
+                    f"a l'adresse ip {FREEBOX_SERVER_IP}\n\nLe programme va "
                     "maitenant vérifier si celui-ci est celui de la Freebox server\n")
             elif option == "2":
                 FREEBOX_SERVER_IP = input(
@@ -212,14 +212,14 @@ if crypted.lower() == "non":
 
     try:
         if https:
-            driver.get("https://" + FREEBOX_SERVER_IP + "/login.php")
+            driver.get(f"https://{FREEBOX_SERVER_IP}/login.php")
         else:
-            driver.get("http://" + FREEBOX_SERVER_IP + "/login.php")
+            driver.get(f"http://{FREEBOX_SERVER_IP}/login.php")
     except WebDriverException as e:
         if 'net::ERR_ADDRESS_UNREACHABLE' in e.msg:
-            print("The programme cannot reach the address " + FREEBOX_SERVER_IP + " . Exit programme.")
+            print(f"The programme cannot reach the address {FREEBOX_SERVER_IP} . Exit programme.")
             logging.error(
-                "The programme cannot reach the address " + FREEBOX_SERVER_IP + " . Exit programme."
+                f"The programme cannot reach the address {FREEBOX_SERVER_IP} . Exit programme."
             )
             driver.quit()
             sys.exit(1)
@@ -365,7 +365,8 @@ if go_on:
                    "AUTO_UPDATE",
                    ]
 
-    with open("/home/seluser/.config/select_freeboxos/cron_docker.conf", "w") as conf:
+    with open("/home/seluser/.config/select_freeboxos"
+              "/cron_docker.conf", "w", encoding='utf-8') as conf:
         for param in cron_params:
             if "START_FREEBOXOS" in param:
                 if crypted.lower() == "oui":
@@ -397,7 +398,8 @@ if go_on:
               "CRYPTED_CREDENTIALS",
               ]
 
-    with open("/home/seluser/.config/select_freeboxos/config.py", "w") as conf:
+    with open("/home/seluser/.config/select_freeboxos"
+              "/config.py", "w", encoding='utf-8') as conf:
         for param in params:
             if "ADMIN_PASSWORD" in param:
                 if crypted.lower() == "oui":
@@ -438,7 +440,7 @@ conf_dir = os.path.expanduser("/home/seluser/.config/select_freeboxos")
 netrc_file = os.path.join(conf_dir, ".netrc")
 
 if not os.path.exists(netrc_file):
-    with open(netrc_file, 'a'):
+    with open(netrc_file, 'a', encoding='utf-8'):
         os.utime(netrc_file, None)
 
     os.chmod(netrc_file, 0o600)
@@ -469,11 +471,13 @@ if crypted.lower() == "non":
 
         authprog_response = "403"
 
-        with open("/home/seluser/.config/select_freeboxos/.netrc", "r") as file:
+        with open("/home/seluser/.config/select_freeboxos"
+                  "/.netrc", "r", encoding='utf-8') as file:
             lines_origin = file.read().splitlines()
 
         while authprog_response != "200":
-            with open("/home/seluser/.config/select_freeboxos/.netrc", "r") as file:
+            with open("/home/seluser/.config/select_freeboxos"
+                      "/.netrc", "r", encoding='utf-8') as file:
                 lines = file.read().splitlines()
 
             try:
@@ -491,7 +495,8 @@ if crypted.lower() == "non":
                     )
                 )
 
-            with open("/home/seluser/.config/select_freeboxos/.netrc", "w") as file:
+            with open("/home/seluser/.config/select_freeboxos"
+                      "/.netrc", "w", encoding='utf-8') as file:
                 for line in lines:
                     file.write(line + "\n")
 
@@ -524,13 +529,15 @@ if crypted.lower() == "non":
                         )
                 else:
                     go_on = False
-                    with open("/home/seluser/.config/select_freeboxos/.netrc", "w") as file:
+                    with open("/home/seluser/.config/select_freeboxos"
+                              "/.netrc", "w", encoding='utf-8') as file:
                         for line in lines_origin:
                             file.write(line + "\n")
                     break
         print("\nLe programme est maintenant prêt pour paramétrer les enregistrements.\n")
 else:
-    with open("/home/seluser/.config/select_freeboxos/.netrc", "r") as file:
+    with open("/home/seluser/.config/select_freeboxos"
+              "/.netrc", "r", encoding='utf-8') as file:
         lines = file.read().splitlines()
 
     try:
@@ -542,7 +549,8 @@ else:
         lines.append("  login XXXXXXXX")
         lines.append("  password XXXXXXXX")
 
-    with open("/home/seluser/.config/select_freeboxos/.netrc", "w") as file:
+    with open("/home/seluser/.config/select_freeboxos"
+              "/.netrc", "w", encoding='utf-8') as file:
         for line in lines:
             file.write(line + "\n")
     print("\nLe paramétrage du programme a été réalisé. Vous pouvez maintenant sortir "
