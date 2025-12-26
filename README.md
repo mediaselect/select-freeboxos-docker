@@ -1,4 +1,4 @@
-# select-freeboxos-docker v1.0.0:
+# select-freeboxos-docker v2.0.0:
 
 ## Licence
 
