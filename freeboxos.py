@@ -132,6 +132,7 @@ def validate_video_title(title):
     return sanitized_title
 
 def scrub_event(event, hint):
+    """Redact sensitive fields from Sentry events before uploading."""
     sensitive_keys = ['password', 'secret', 'token', 'credential']
 
     def sanitize(value):
