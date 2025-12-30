@@ -131,6 +131,42 @@ def validate_video_title(title):
 
     return sanitized_title
 
+def scrub_event(event, hint):
+    sensitive_keys = ['password', 'secret', 'token', 'credential']
+
+    def sanitize(value):
+        if isinstance(value, str):
+            for key in sensitive_keys:
+                if key in value.lower():
+                    return "[REDACTED]"
+        return value
+
+    def sanitize_dict(d):
+        for k, v in d.items():
+            if any(key in k.lower() for key in sensitive_keys):
+                d[k] = "[REDACTED]"
+            elif isinstance(v, dict):
+                sanitize_dict(v)
+            elif isinstance(v, list):
+                d[k] = [sanitize(item) for item in v]
+            else:
+                d[k] = sanitize(v)
+        return d
+
+    if "request" in event:
+        sanitize_dict(event["request"])
+
+    if "extra" in event:
+        sanitize_dict(event["extra"])
+
+    if "breadcrumbs" in event:
+        for crumb in event["breadcrumbs"].get("values", []):
+            sanitize_dict(crumb)
+
+    if "contexts" in event:
+        sanitize_dict(event["contexts"])
+
+    return event
 
 if SENTRY_MONITORING_SDK:
     sentry_sdk.init(
@@ -138,10 +174,7 @@ if SENTRY_MONITORING_SDK:
         traces_sample_rate=0,
         send_default_pii=False,
         include_local_variables=False,
-        before_send=lambda event, hint: None if any(
-            keyword in str(event).lower()
-            for keyword in ['password', 'credential', 'secret', 'token']
-        ) else event,
+        before_send=scrub_event,
     )
     if sentry_sdk.Hub.current.client and sentry_sdk.Hub.current.client.options.get("traces_sample_rate", 0) > 0:
         sentry_sdk.profiler.start_profiler()
