@@ -27,6 +27,7 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 
 from channels_free import CHANNELS_FREE
 from module_freeboxos import get_website_title
+from security_sanitizer import global_sanitizer, scrub_event
 
 sys.path.append("/home/seluser/.config/select_freeboxos")
 
@@ -61,45 +62,6 @@ def translate_month(month_num):
     else:
         return "Mois invalide"
 
-
-class SensitiveDataFilter(logging.Filter):
-    """Filter to redact sensitive data from logs."""
-
-    def __init__(self):
-        super().__init__()
-        self.sensitive_patterns = []
-
-        if not CRYPTED_CREDENTIALS and ADMIN_PASSWORD:
-            escaped_pwd = re.escape(ADMIN_PASSWORD)
-            self.sensitive_patterns.append((re.compile(escaped_pwd), '[REDACTED_PASSWORD]'))
-
-        if not CRYPTED_CREDENTIALS and FREEBOX_SERVER_IP:
-            escaped_ip = re.escape(FREEBOX_SERVER_IP)
-            self.sensitive_patterns.append((re.compile(escaped_ip), '[REDACTED_IP]'))
-
-    def filter(self, record):
-        """
-        This method is called automatically by Python's logging framework
-        for every log record that passes through handlers with this filter.
-        """
-        # Redact sensitive data from message
-        if record.msg:
-            msg = str(record.msg)
-            for pattern, replacement in self.sensitive_patterns:
-                msg = pattern.sub(replacement, msg)
-            record.msg = msg
-
-        # Redact from args if present
-        if record.args:
-            args = list(record.args) if isinstance(record.args, tuple) else [record.args]
-            for i, arg in enumerate(args):
-                if isinstance(arg, str):
-                    for pattern, replacement in self.sensitive_patterns:
-                        args[i] = pattern.sub(replacement, arg)
-            record.args = tuple(args) if isinstance(record.args, tuple) else args[0]
-
-        return True
-
 def cancel_record(driver):
     text_to_click = "Annuler"
     xpath = f"//span[text()='{text_to_click}']"
@@ -131,44 +93,6 @@ def validate_video_title(title):
 
     return sanitized_title
 
-def scrub_event(event, hint):
-    """Redact sensitive fields from Sentry events before uploading."""
-    sensitive_keys = ['password', 'secret', 'token', 'credential']
-
-    def sanitize(value):
-        if isinstance(value, str):
-            for key in sensitive_keys:
-                if key in value.lower():
-                    return "[REDACTED]"
-        return value
-
-    def sanitize_dict(d):
-        for k, v in d.items():
-            if any(key in k.lower() for key in sensitive_keys):
-                d[k] = "[REDACTED]"
-            elif isinstance(v, dict):
-                sanitize_dict(v)
-            elif isinstance(v, list):
-                d[k] = [sanitize(item) for item in v]
-            else:
-                d[k] = sanitize(v)
-        return d
-
-    if "request" in event:
-        sanitize_dict(event["request"])
-
-    if "extra" in event:
-        sanitize_dict(event["extra"])
-
-    if "breadcrumbs" in event:
-        for crumb in event["breadcrumbs"].get("values", []):
-            sanitize_dict(crumb)
-
-    if "contexts" in event:
-        sanitize_dict(event["contexts"])
-
-    return event
-
 if SENTRY_MONITORING_SDK:
     sentry_sdk.init(
         dsn="https://d8f2365db01e2b4afbb4a25f1157ec67@o4508778574381056.ingest.de.sentry.io/4508868363026512",
@@ -198,9 +122,15 @@ logger.addHandler(log_handler)
 sentry_handler = logging.StreamHandler()
 sentry_handler.setLevel(logging.WARNING)
 
-sensitive_filter = SensitiveDataFilter()
+sensitive_filter = global_sanitizer
+
 log_handler.addFilter(sensitive_filter)
 sentry_handler.addFilter(sensitive_filter)
+
+sensitive_filter.update_patterns({
+    "admin_password": ADMIN_PASSWORD,
+    "freebox_ip": FREEBOX_SERVER_IP,
+})
 
 logger.addHandler(sentry_handler)
 logger.setLevel(logging.INFO)
@@ -218,11 +148,10 @@ if CRYPTED_CREDENTIALS:
         if not FREEBOX_SERVER_IP or not ADMIN_PASSWORD:
             logging.error("Credentials not found by keyring.")
             sys.exit(1)
-        sensitive_filter_updated = SensitiveDataFilter()
-        log_handler.removeFilter(sensitive_filter)
-        sentry_handler.removeFilter(sensitive_filter)
-        log_handler.addFilter(sensitive_filter_updated)
-        sentry_handler.addFilter(sensitive_filter_updated)
+        sensitive_filter.update_patterns({
+            "admin_password": ADMIN_PASSWORD,
+            "freebox_ip": FREEBOX_SERVER_IP,
+        })
 
     except Exception as e:
         logging.exception("An error occurred while retrieving credentials from keyring.")
