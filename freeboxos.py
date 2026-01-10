@@ -75,11 +75,11 @@ def find_element_with_retries(driver, by, value, retries=3, delay=1):
         try:
             return driver.find_element(by, value)
         except NoSuchElementException:
-            logging.error(
+            logger.error(
                 f"Attempt {attempt + 1}/{retries}: Le bouton programmer un enregistrement n'a pas été trouvé."
             )
             sleep(delay)
-    logging.error(
+    logger.error(
         "Impossible de trouver le bouton programmer un enregistrement après plusieurs tentatives."
     )
     driver.quit()
@@ -146,7 +146,7 @@ if CRYPTED_CREDENTIALS:
         FREEBOX_SERVER_IP = os.getenv("FREEBOX_SERVER_IP")
 
         if not FREEBOX_SERVER_IP or not ADMIN_PASSWORD:
-            logging.error("Credentials not found by keyring.")
+            logger.error("Credentials not found by keyring.")
             sys.exit(1)
         sensitive_filter.update_patterns({
             "admin_password": ADMIN_PASSWORD,
@@ -154,7 +154,7 @@ if CRYPTED_CREDENTIALS:
         })
 
     except Exception as e:
-        logging.exception("An error occurred while retrieving credentials from keyring.")
+        logger.exception("An error occurred while retrieving credentials from keyring.")
         exit(1)
 
 if HTTPS is False:
@@ -162,7 +162,7 @@ if HTTPS is False:
     title = get_website_title(url)
 
     if title != "Freebox OS":
-        logging.error(
+        logger.error(
             "Imposible to connect to the Freebox server. Exit programme."
         )
         sys.exit(1)
@@ -174,13 +174,13 @@ try:
     ) as jsonfile:
         data_info_progs = json.load(jsonfile)
 except FileNotFoundError:
-    logging.error(
+    logger.error(
         "No info_progs.json file. Need to check curl command or "
         "internet connection. Exit programme."
     )
     sys.exit(1)
 except json.JSONDecodeError:
-    logging.error(
+    logger.error(
         "Invalid JSON data in info_progs.json file. The file may be empty or corrupted."
     )
     sys.exit(1)
@@ -192,7 +192,7 @@ try:
     ) as jsonfile:
         data = json.load(jsonfile)
 except FileNotFoundError:
-    logging.error(
+    logger.error(
         "No progs_to_record.json file. Exit programme."
     )
     sys.exit(1)
@@ -201,7 +201,7 @@ if len(data) == 0 or len(data_info_progs) == 0:
     src_file = os.path.join(os.path.expanduser("~"), ".local", "share", "select_freeboxos", "info_progs.json")
     dst_file = os.path.join(os.path.expanduser("~"), ".local", "share", "select_freeboxos", "info_progs_last.json")
     shutil.copy(src_file, dst_file)
-    logging.info("No data to record programmes. Exit programme.")
+    logger.info("No data to record programmes. Exit programme.")
     sys.exit(1)
 
 
@@ -219,21 +219,21 @@ try:
                 sleep(8)
         except WebDriverException as e:
             if 'net::ERR_ADDRESS_UNREACHABLE' in e.msg:
-                logging.error(
+                logger.error(
                     f"The programme cannot reach the address {FREEBOX_SERVER_IP} . Exit programme."
                 )
                 driver.quit()
                 sys.exit(1)
             else:
-                logging.error("A WebDriverException occurred. Exiting the program.")
-                logging.error(f"Exception type: {type(e).__name__}")
+                logger.error("A WebDriverException occurred. Exiting the program.")
+                logger.error(f"Exception type: {type(e).__name__}")
                 driver.quit()
                 sys.exit(1)
 
         try:
             login = driver.find_element("id", "fbx-password")
         except Exception as e:
-            logging.error(
+            logger.error(
                 "Cannot connect to Freebox OS. Exit programme.", exc_info=False
             )
             driver.quit()
@@ -251,7 +251,7 @@ try:
             invalid_password = driver.find_element(
                 By.XPATH, "//div[contains(text(), 'Identifiants invalides')]"
             )
-            logging.error(
+            logger.error(
                 "Le mot de passe administrateur de la Freebox est invalide. "
                 "La programmation des enregistrements n'a pas "
                 "pu être réalisée. Merci de vérifier le mot de passe."
@@ -311,7 +311,7 @@ try:
             try:
                 channel_number = CHANNELS_FREE[video["channel"]]
             except KeyError:
-                logging.error(
+                logger.error(
                     "La chaine %s n'est pas présente dans le "
                     "fichier channels_free.py", video["channel"]
                 )
@@ -335,8 +335,8 @@ try:
                 try:
                     programmer_enregistrements.click()
                 except ElementClickInterceptedException as e:
-                    logging.error("A ElementClickInterceptedException occurred.")
-                    logging.error(
+                    logger.error("A ElementClickInterceptedException occurred.")
+                    logger.error(
                         "Impossible de programmer les enregistrements. "
                         "Une fenêtre d'information empêche probablement "
                         "de pouvoir clicker sur le bouton programmer un "
@@ -368,7 +368,7 @@ try:
                     last_channel = channel_uuid.get_attribute("value")
                     n += 1
                     if n > 10:
-                        logging.error(
+                        logger.error(
                             "Impossible de sélectionner la chaîne. Merci de "
                             "vérifier si la chaine n° %s qui "
                             "correspond à la chaine %s "
@@ -394,8 +394,8 @@ try:
                     try:
                         day_click = driver.find_element(By.XPATH, xpath)
                     except NoSuchElementException as e:
-                        logging.error("A NoSuchElementException occurred.")
-                        logging.error(
+                        logger.error("A NoSuchElementException occurred.")
+                        logger.error(
                             "Impossible de trouver la date pour le programme %s. Le "
                             "programme ne sera pas enregistré.",
                             validate_video_title(video['title'])
@@ -417,7 +417,7 @@ try:
                                 lambda d: start_time.get_attribute("value") == start_hour + ":" + start_minute
                             )
                         except:
-                            logging.error("Timeout: The input field did not update to the correct time.")
+                            logger.error("Timeout: The input field did not update to the correct time.")
 
                         actual_start = start_time.get_attribute("value")
 
@@ -425,7 +425,7 @@ try:
                             break
                         loop_counter += 1
                         if loop_counter > 4:
-                            logging.error(
+                            logger.error(
                                 "Impossible de saisir l'heure de début pour le "
                                 "programme %s. Le programme ne sera pas enregistré.",
                                 validate_video_title(video['title'])
@@ -447,7 +447,7 @@ try:
                                 lambda d: end_time.get_attribute("value") == end_hour + ":" + end_minute
                             )
                         except:
-                            logging.error("Timeout: The input field did not update to the correct time.")
+                            logger.error("Timeout: The input field did not update to the correct time.")
 
                         actual_end = end_time.get_attribute("value")
 
@@ -455,7 +455,7 @@ try:
                             break
                         loop_counter += 1
                         if loop_counter > 4:
-                            logging.error(
+                            logger.error(
                                 "Impossible de saisir l'heure de fin pour le "
                                 "programme %s. Le programme ne sera pas enregistré.",
                                 validate_video_title(video['title'])
@@ -476,7 +476,7 @@ try:
                                 name_prog.send_keys(validate_video_title(video["title"]))
                                 sleep(1)
                             except ElementNotInteractableException:
-                                logging.error(
+                                logger.error(
                                     "Une ElementNotInteractableException est apparue. "
                                     "Le titre de MEDIA select ne sera pas utilisé pour "
                                     "nommer le vidéo."
@@ -490,7 +490,7 @@ try:
                             internal_error = driver.find_element(
                                 By.XPATH, "//div[contains(text(), 'Erreur interne')]"
                             )
-                            logging.error(
+                            logger.error(
                                 "Une erreur interne de la Freebox est survenue. "
                                 "La programmation des enregistrements n'a pas "
                                 "pu être réalisée. Merci de vérifier si le disque "
@@ -509,6 +509,6 @@ try:
         dst_file = os.path.join(os.path.expanduser("~"), ".local", "share", "select_freeboxos", "info_progs_last.json")
         shutil.copy(src_file, dst_file)
 except Exception as e:
-    logging.error("An unexpected error occurred:")
-    logging.error("Exception type: %s", type(e).__name__)
-    logging.error("Exception message: %s", str(e)[:100])
+    logger.error("An unexpected error occurred:")
+    logger.error("Exception type: %s", type(e).__name__)
+    logger.error("Exception message: %s", str(e)[:100])
