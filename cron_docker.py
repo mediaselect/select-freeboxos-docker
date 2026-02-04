@@ -151,5 +151,9 @@ if info_progs_last_mod_time is None or info_progs_last_mod_time.date() < datetim
 
         remove_items(INFO_PROGS, INFO_PROGS_LAST, PROGS_TO_RECORD)
 
-        cmd = "cd /home/seluser/select-freeboxos && bash cron_freeboxos_app.sh"
-        Popen(cmd, stdout=PIPE, stderr=PIPE, shell=True)
+        Popen(
+            ["bash", "cron_freeboxos_app.sh"],
+            cwd="/home/seluser/select-freeboxos",
+            stdout=PIPE,
+            stderr=PIPE
+        )
