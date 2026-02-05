@@ -1,4 +1,5 @@
 import getpass
+import json
 import logging
 import os
 import shutil
@@ -381,60 +382,30 @@ if go_on:
             else:
                 conf.write(param + "\n")
 
-    config_path = "/home/seluser/.config/select_freeboxos/config.py"
-    template_path = "/home/seluser/select-freeboxos/config_template.py"
+    config = {}
 
-    if not os.path.exists(config_path):
-        shutil.copy(template_path, config_path)
-        os.chmod(config_path, 0o640)
+    config["CRYPTED_CREDENTIALS"] = crypted.lower() == "oui"
 
+    if config["CRYPTED_CREDENTIALS"]:
+        config["ADMIN_PASSWORD"] = "XXXXXXX"
+        config["FREEBOX_SERVER_IP"] = "XXXXXXX"
+    else:
+        config["ADMIN_PASSWORD"] = freebox_os_password
+        config["FREEBOX_SERVER_IP"] = FREEBOX_SERVER_IP
 
-    params = ["ADMIN_PASSWORD",
-              "FREEBOX_SERVER_IP",
-              "MEDIA_SELECT_TITLES",
-              "MAX_SIM_RECORDINGS",
-              "HTTPS",
-              "SENTRY_MONITORING_SDK",
-              "CRYPTED_CREDENTIALS",
-              ]
+    config["MEDIA_SELECT_TITLES"] = title_answer.lower() == "oui"
+    config["MAX_SIM_RECORDINGS"] = int(max_sim_recordings)
+    config["HTTPS"] = bool(https)
+    config["SENTRY_MONITORING_SDK"] = record_logs.lower() == "oui"
 
-    with open("/home/seluser/.config/select_freeboxos"
-              "/config.py", "w", encoding='utf-8') as conf:
-        for param in params:
-            if "ADMIN_PASSWORD" in param:
-                if crypted.lower() == "oui":
-                    conf.write('ADMIN_PASSWORD = "XXXXXXX"\n')
-                else:
-                    conf.write('ADMIN_PASSWORD = "' + freebox_os_password + '"\n')
-            elif "FREEBOX_SERVER_IP" in param:
-                if crypted.lower() == "oui":
-                    conf.write('FREEBOX_SERVER_IP = "XXXXXXX"\n')
-                else:
-                    conf.write('FREEBOX_SERVER_IP = "' + FREEBOX_SERVER_IP + '"\n')
-            elif "MEDIA_SELECT_TITLES" in param:
-                if title_answer.lower() == "oui":
-                    conf.write("MEDIA_SELECT_TITLES = True\n")
-                else:
-                    conf.write("MEDIA_SELECT_TITLES = False\n")
-            elif "MAX_SIM_RECORDINGS" in param:
-                conf.write("MAX_SIM_RECORDINGS = " + str(max_sim_recordings) + "\n")
-            elif "HTTPS" in param:
-                if https:
-                    conf.write("HTTPS = True\n")
-                else:
-                    conf.write("HTTPS = False\n")
-            elif "SENTRY_MONITORING_SDK" in param:
-                if record_logs.lower() == "oui":
-                    conf.write("SENTRY_MONITORING_SDK = True\n")
-                else:
-                    conf.write("SENTRY_MONITORING_SDK = False\n")
-            elif "CRYPTED_CREDENTIALS" in param:
-                if crypted.lower() == "oui":
-                    conf.write("CRYPTED_CREDENTIALS = True\n")
-                else:
-                    conf.write("CRYPTED_CREDENTIALS = False\n")
-            else:
-                conf.write(param + "\n")
+    config_path = "/home/seluser/.config/select_freeboxos/config.json"
+
+    os.makedirs(os.path.dirname(config_path), exist_ok=True)
+
+    with open(config_path, "w") as f:
+        json.dump(config, f, indent=4)
+
+    os.chmod(config_path, 0o600)
 
 conf_dir = os.path.expanduser("/home/seluser/.config/select_freeboxos")
 netrc_file = os.path.join(conf_dir, ".netrc")

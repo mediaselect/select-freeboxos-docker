@@ -6,6 +6,7 @@ import shutil
 import sentry_sdk
 import re
 
+from pathlib import Path
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from time import sleep
@@ -29,17 +30,29 @@ from channels_free import CHANNELS_FREE
 from module_freeboxos import get_website_title
 from security_sanitizer import global_sanitizer, scrub_event
 
-sys.path.append("/home/seluser/.config/select_freeboxos")
+CONFIG_PATH = Path("/home/seluser/.config/select_freeboxos/config.json")
 
-from config import (
-    ADMIN_PASSWORD,
-    FREEBOX_SERVER_IP,
-    MEDIA_SELECT_TITLES,
-    MAX_SIM_RECORDINGS,
-    HTTPS,
-    SENTRY_MONITORING_SDK,
-    CRYPTED_CREDENTIALS,
-)
+try:
+    with CONFIG_PATH.open(encoding="utf-8") as f:
+        config = json.load(f)
+except FileNotFoundError:
+    print("ERROR: config.json not found", file=sys.stderr)
+    sys.exit(1)
+except json.JSONDecodeError as e:
+    print(f"ERROR: invalid config.json: {e}", file=sys.stderr)
+    sys.exit(1)
+
+try:
+    ADMIN_PASSWORD = config["ADMIN_PASSWORD"]
+    FREEBOX_SERVER_IP = config["FREEBOX_SERVER_IP"]
+    MEDIA_SELECT_TITLES = bool(config["MEDIA_SELECT_TITLES"])
+    MAX_SIM_RECORDINGS = int(config["MAX_SIM_RECORDINGS"])
+    HTTPS = bool(config["HTTPS"])
+    SENTRY_MONITORING_SDK = bool(config["SENTRY_MONITORING_SDK"])
+    CRYPTED_CREDENTIALS = bool(config.get("CRYPTED_CREDENTIALS", False))
+except KeyError as e:
+    print(f"ERROR: missing config key: {e}", file=sys.stderr)
+    sys.exit(1)
 
 month_names_fr = {
     '01': 'Jan',
