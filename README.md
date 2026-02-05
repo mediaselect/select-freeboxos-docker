@@ -1,4 +1,4 @@
-# select-freeboxos-docker v2.0.0:
+# select-freeboxos-docker v3.0.0:
 
 ## Licence
 
@@ -15,3 +15,7 @@ Exemple de commande à lancer:
 nano /home/seluser/.config/select_freeboxos/config.json
 
 Vous pourrez ainsi modifier des paramètres sans avoir à relancer le programme install.py
+
+## Mise à jour
+
+Ce projet est conçu comme une application portable via Docker. Pour simplifier l'expérience utilisateur et garantir la sécurité sans nécessiter de manipulations techniques complexes, le conteneur gère sa propre maintenance. Au démarrage, Le conteneur vérifie et installe automatiquement les dernières mises à jour de sécurité du système.
