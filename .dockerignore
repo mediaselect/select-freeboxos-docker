@@ -1,0 +1,24 @@
+# .dockerignore
+
+# Git metadata
+.git
+.gitignore
+
+# Python environment and cache
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Local secrets and config
+.netrc
+.env
+config.json
+
+# Local logs and temp files
+*.log
+/tmp/
+
+# Documentation
+README.md
