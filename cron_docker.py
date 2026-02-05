@@ -9,20 +9,6 @@ from subprocess import Popen, PIPE, run
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
-CONFIG_PATH = Path("/home/seluser/.config/select_freeboxos/config.json")
-
-try:
-    with CONFIG_PATH.open(encoding="utf-8") as f:
-        config = json.load(f)
-except FileNotFoundError:
-    logging.error("Missing config.json file")
-    sys.exit(1)
-except json.JSONDecodeError:
-    logging.error("Invalid JSON in config.json")
-    sys.exit(1)
-
-CRYPTED_CREDENTIALS = bool(config.get("CRYPTED_CREDENTIALS", False))
-
 log_file = "/var/log/select_freeboxos/select_freeboxos.log"
 max_bytes = 10 * 1024 * 1024  # 10 MB
 backup_count = 5
@@ -38,10 +24,20 @@ logger = logging.getLogger()
 logger.addHandler(log_handler)
 
 logger.setLevel(logging.INFO)
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(levelname)s %(message)s',
-                    datefmt='%d-%m-%Y %H:%M:%S',
-                    handlers=[log_handler])
+
+CONFIG_PATH = Path("/home/seluser/.config/select_freeboxos/config.json")
+
+try:
+    with CONFIG_PATH.open(encoding="utf-8") as f:
+        config = json.load(f)
+except FileNotFoundError:
+    logger.error("Missing config.json file")
+    sys.exit(1)
+except json.JSONDecodeError:
+    logger.error("Invalid JSON in config.json")
+    sys.exit(1)
+
+CRYPTED_CREDENTIALS = bool(config.get("CRYPTED_CREDENTIALS", False))
 
 def get_file_modification_time(file_path):
     try:
@@ -57,13 +53,13 @@ def remove_items(INFO_PROGS, INFO_PROGS_LAST, PROGS_TO_RECORD):
         with open(INFO_PROGS, 'r') as f:
             source_data = json.load(f)
     except FileNotFoundError:
-        logging.error(
+        logger.error(
         "No info_progs.json file. Need to check curl command or "
         "internet connection. Exit programme."
         )
         sys.exit(1)
     except json.decoder.JSONDecodeError:
-        logging.error(
+        logger.error(
         "JSONDecodeError in info_progs.json file. Need to check curl command or "
         "internet connection. Exit programme."
         )
@@ -88,7 +84,7 @@ API_URL = "https://www.media-select.fr/api/v1/progweek"
 if not CRYPTED_CREDENTIALS:
     netrc_path = os.path.expanduser("/home/seluser/.netrc")
     if not os.path.exists(netrc_path):
-        logging.error("No .netrc file. Exit program")
+        logger.error("No .netrc file. Exit program")
         sys.exit(1)
 
 stat_result = run(
@@ -115,7 +111,7 @@ if info_progs_last_mod_time is None or info_progs_last_mod_time.date() < datetim
                 password_mediaselect = os.getenv("PASSWORD_MEDIASELECT")
 
                 if username_mediaselect is None or password_mediaselect is None:
-                    logging.error("Environment variables are empty.")
+                    logger.error("Environment variables are empty.")
                     raise ValueError("Environment variables are empty.")
 
                 response = requests.get(
@@ -129,12 +125,12 @@ if info_progs_last_mod_time is None or info_progs_last_mod_time.date() < datetim
                 with open(INFO_PROGS, "w") as f:
                     f.write(response.text)
 
-                logging.info("Data downloaded with requests successfully.")
+                logger.info("Data downloaded with requests successfully.")
 
             except requests.RequestException as e:
-                logging.error(f"API request failed: {e}")
+                logger.error(f"API request failed: {e}")
             except ValueError as e:
-                logging.error(f"Error: {e}")
+                logger.error(f"Error: {e}")
         else:
             try:
                 curl_result = run(
@@ -153,10 +149,10 @@ if info_progs_last_mod_time is None or info_progs_last_mod_time.date() < datetim
                 with open(INFO_PROGS, "wb") as json_file:
                     json_file.write(curl_result.stdout)
 
-                logging.info("Data downloaded with curl successfully.")
+                logger.info("Data downloaded with curl successfully.")
 
             except Exception as e:
-                logging.error(f"Error: {str(e)}\n")
+                logger.error(f"Error: {str(e)}\n")
 
         remove_items(INFO_PROGS, INFO_PROGS_LAST, PROGS_TO_RECORD)
 
