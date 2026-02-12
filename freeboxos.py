@@ -1,8 +1,10 @@
+import ipaddress
 import json
 import logging
 import sys
 import os
 import shutil
+import socket
 import sentry_sdk
 import re
 
@@ -50,6 +52,7 @@ try:
     HTTPS = bool(config["HTTPS"])
     SENTRY_MONITORING_SDK = bool(config["SENTRY_MONITORING_SDK"])
     CRYPTED_CREDENTIALS = bool(config.get("CRYPTED_CREDENTIALS", False))
+    SECURITY_STRICT_MODE = bool(config.get("SECURITY_STRICT_MODE", True))
 except KeyError as e:
     print(f"ERROR: missing config key: {e}", file=sys.stderr)
     sys.exit(1)
@@ -105,6 +108,58 @@ def validate_video_title(title):
         sanitized_title = sanitized_title[:200]
 
     return sanitized_title
+
+def is_private_address(hostname: str) -> bool:
+    """
+    Determine whether a hostname resolves to a private IP address.
+    """
+    try:
+        ip = socket.gethostbyname(hostname)
+        return ipaddress.ip_address(ip).is_private
+    except Exception:
+        return False
+
+def classify_connection_context(hostname: str, https_enabled: bool) -> str:
+    """
+    Returns: 'local', 'remote_secure', 'remote_insecure'
+    """
+    private = is_private_address(hostname)
+
+    if private and not https_enabled:
+        return "local"
+
+    if https_enabled:
+        return "remote_secure"
+
+    return "remote_insecure"
+
+def enforce_security_policy(hostname: str, https_enabled: bool):
+    context = classify_connection_context(hostname, https_enabled)
+
+    if context == "remote_insecure":
+        logger.critical(
+            "Connexion HTTP détectée hors réseau local. "
+            "Pour des raisons de sécurité, HTTPS est obligatoire "
+            "lorsque l’ordinateur peut se trouver sur un réseau public."
+        )
+        sys.exit(1)
+
+    if SECURITY_STRICT_MODE and context == "remote_secure":
+        logger.warning(
+            "Connexion distante détectée. "
+            "Le mode sécurité stricte est activé : "
+            "assurez-vous que l’ordinateur est de confiance."
+        )
+
+    logger.info("Contexte réseau détecté : %s", context)
+
+def build_url(use_https, server_ip, path=""):
+    """
+    Safely construct URL.
+    """
+    protocol = "https://" if use_https else "http://"
+    full_url = protocol + server_ip + path
+    return full_url
 
 if SENTRY_MONITORING_SDK:
     sentry_sdk.init(
@@ -224,12 +279,10 @@ options.add_argument("start-maximized")
 try:
     with webdriver.Firefox(options=options) as driver:
         try:
-            if HTTPS:
-                driver.get(f"https://{FREEBOX_SERVER_IP}/login.php#Fbx.os.app.pvr.app")
-                sleep(8)
-            else:
-                driver.get(f"http://{FREEBOX_SERVER_IP}/login.php#Fbx.os.app.pvr.app")
-                sleep(8)
+            enforce_security_policy(FREEBOX_SERVER_IP, HTTPS)
+            url = build_url(HTTPS, FREEBOX_SERVER_IP, "/login.php#Fbx.os.app.pvr.app")
+            driver.get(url)
+            sleep(8)
         except WebDriverException as e:
             if 'net::ERR_ADDRESS_UNREACHABLE' in e.msg:
                 logger.error(
