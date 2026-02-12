@@ -117,7 +117,8 @@ if info_progs_last_mod_time is None or info_progs_last_mod_time.date() < datetim
                 response = requests.get(
                     API_URL,
                     auth=(username_mediaselect, password_mediaselect),
-                    headers={"Accept": "application/json; indent=4"}
+                    headers={"Accept": "application/json; indent=4"},
+                    timeout=10,
                 )
 
                 response.raise_for_status()

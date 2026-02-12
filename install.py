@@ -420,7 +420,7 @@ if not os.path.exists(netrc_file):
 if crypted.lower() == "non":
     print("\nConfiguration de la connexion à MEDIA-select.fr:\n")
 
-    response = requests.head("https://media-select.fr")
+    response = requests.head("https://media-select.fr", timeout=5)
     http_response = response.status_code
 
     if http_response != 200:
