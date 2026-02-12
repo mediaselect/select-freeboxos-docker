@@ -32,16 +32,41 @@ from channels_free import CHANNELS_FREE
 from module_freeboxos import get_website_title
 from security_sanitizer import global_sanitizer, scrub_event
 
+log_file = "/var/log/select_freeboxos/select_freeboxos.log"
+max_bytes = 10 * 1024 * 1024
+backup_count = 5
+
+log_handler = RotatingFileHandler(log_file, maxBytes=max_bytes, backupCount=backup_count)
+log_format = '%(asctime)s %(levelname)s %(message)s'
+log_datefmt = '%d-%m-%Y %H:%M:%S'
+formatter = logging.Formatter(log_format, log_datefmt)
+
+log_handler.setFormatter(formatter)
+
+logger = logging.getLogger("module_freeboxos")
+logger.addHandler(log_handler)
+
+sentry_handler = logging.StreamHandler()
+sentry_handler.setLevel(logging.WARNING)
+
+sensitive_filter = global_sanitizer
+
+log_handler.addFilter(sensitive_filter)
+sentry_handler.addFilter(sensitive_filter)
+
+logger.addHandler(sentry_handler)
+logger.setLevel(logging.INFO)
+
 CONFIG_PATH = Path("/home/seluser/.config/select_freeboxos/config.json")
 
 try:
     with CONFIG_PATH.open(encoding="utf-8") as f:
         config = json.load(f)
 except FileNotFoundError:
-    print("ERROR: config.json not found", file=sys.stderr)
+    logger.error("config.json not found")
     sys.exit(1)
 except json.JSONDecodeError as e:
-    print(f"ERROR: invalid config.json: {e}", file=sys.stderr)
+    logger.error("invalid config.json: %s", e)
     sys.exit(1)
 
 try:
@@ -54,8 +79,13 @@ try:
     CRYPTED_CREDENTIALS = bool(config.get("CRYPTED_CREDENTIALS", False))
     SECURITY_STRICT_MODE = bool(config.get("SECURITY_STRICT_MODE", True))
 except KeyError as e:
-    print(f"ERROR: missing config key: {e}", file=sys.stderr)
+    logger.error("missing config key: %s", e)
     sys.exit(1)
+
+sensitive_filter.update_patterns({
+    "admin_password": ADMIN_PASSWORD,
+    "freebox_ip": FREEBOX_SERVER_IP,
+})
 
 month_names_fr = {
     '01': 'Jan',
@@ -171,37 +201,6 @@ if SENTRY_MONITORING_SDK:
     )
     if sentry_sdk.Hub.current.client and sentry_sdk.Hub.current.client.options.get("traces_sample_rate", 0) > 0:
         sentry_sdk.profiler.start_profiler()
-
-
-log_file = "/var/log/select_freeboxos/select_freeboxos.log"
-max_bytes = 10 * 1024 * 1024
-backup_count = 5
-
-log_handler = RotatingFileHandler(log_file, maxBytes=max_bytes, backupCount=backup_count)
-log_format = '%(asctime)s %(levelname)s %(message)s'
-log_datefmt = '%d-%m-%Y %H:%M:%S'
-formatter = logging.Formatter(log_format, log_datefmt)
-
-log_handler.setFormatter(formatter)
-
-logger = logging.getLogger("module_freeboxos")
-logger.addHandler(log_handler)
-
-sentry_handler = logging.StreamHandler()
-sentry_handler.setLevel(logging.WARNING)
-
-sensitive_filter = global_sanitizer
-
-log_handler.addFilter(sensitive_filter)
-sentry_handler.addFilter(sensitive_filter)
-
-sensitive_filter.update_patterns({
-    "admin_password": ADMIN_PASSWORD,
-    "freebox_ip": FREEBOX_SERVER_IP,
-})
-
-logger.addHandler(sentry_handler)
-logger.setLevel(logging.INFO)
 
 if CRYPTED_CREDENTIALS:
     try:
