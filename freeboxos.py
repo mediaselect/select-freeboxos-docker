@@ -203,11 +203,6 @@ sensitive_filter.update_patterns({
 logger.addHandler(sentry_handler)
 logger.setLevel(logging.INFO)
 
-logging.basicConfig(level=logging.INFO,
-                    format=log_format,
-                    datefmt=log_datefmt,
-                    handlers=[log_handler, sentry_handler])
-
 if CRYPTED_CREDENTIALS:
     try:
         ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
