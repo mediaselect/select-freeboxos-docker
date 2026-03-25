@@ -1,66 +1,272 @@
-# select-freeboxos-docker v3.1.0:
+# 📺 select-freeboxos-docker v3.1.0
 
-## Licence
+> 🐳 Run Freebox recording automation anywhere with Docker
+> 🎯 Automatically schedule TV recordings via Freebox OS
 
-Ce projet est sous licence GNU Affero General Public License v3. Consultez le fichier LICENSE pour plus de détails.
+![Docker](https://img.shields.io/badge/Docker-Ready-blue)
+![Platform](https://img.shields.io/badge/Platform-Linux-lightgrey)
+![Architecture](https://img.shields.io/badge/Arch-ARM%20%7C%20x86%20(Docker)-orange)
+![Status](https://img.shields.io/badge/Status-Active-success)
+![Self-hosted](https://img.shields.io/badge/Self--Hosted-Yes-blueviolet)
+![Dependency](https://img.shields.io/badge/Requires-Freebox%20OS-lightgrey)
 
-## Instructions d'installation:
+---
 
-Voir les instructions d'installation sur la page de votre compte à l'adresse www.media-select.fr
+## 🍿 How TV Select works
 
-Afin de changer le paramétrage après l'installation, vous pouvez modifier le fichier config.json situé dans le dossier /home/seluser/.config/select_freeboxos du conteneur Docker
+TV Select turns TV into a **personal discovery engine**.
 
-Exemple de commande à lancer:
+You define what you care about:
 
-nano /home/seluser/.config/select_freeboxos/config.json
+* a documentary about wine 🍷
+* a history episode 🏛️
+* a space report 🚀
+* that rare movie you couldn’t find anywhere 🎬
+* a tennis documentary your son will love 🎾
 
-Vous pourrez ainsi modifier des paramètres sans avoir à relancer le programme install.py
+Then the system works for you:
 
-## Mise à jour
+1. 🔍 Your searches are analyzed
+2. 🧠 TV programs are continuously scanned
+3. 🎯 When a match is found:
 
-Ce projet est conçu comme une application portable via Docker. Pour simplifier l'expérience utilisateur et garantir la sécurité sans nécessiter de manipulations techniques complexes, le conteneur gère sa propre maintenance. Au démarrage, Le conteneur vérifie et installe automatiquement les dernières mises à jour de sécurité du système.
+   * 📧 You receive a notification
+   * 📼 A recording is triggered automatically
 
-## Sécurité et modes de connexion
+👉 No manual searching. No scheduling.
 
-Ce programme automatise l’accès à l’interface **Freebox OS** afin de programmer
-des enregistrements TV sans intervention manuelle.
-Il manipule des **identifiants administrateur sensibles**. Une attention
-particulière est donc portée à la sécurité.
+---
 
+## 📖 TV Select Ecosystem
 
-### Modes de connexion
+This project is part of the **TV Select ecosystem**.
 
-Le programme peut fonctionner dans trois contextes distincts :
+👉 Overview & setup guide:
 
-#### 🟢 Mode local (recommandé)
-- Exécution sur un ordinateur **toujours présent sur le réseau domestique**
-- Connexion directe à la Freebox via le réseau local
-- HTTP autorisé uniquement dans ce contexte
+[![TV Select Ecosystem](https://img.shields.io/badge/TV%20Select-Ecosystem-blue)](https://github.com/tv-select)
 
-Conditions :
-- réseau privé et de confiance
-- machine non utilisée hors du domicile
+## 📡 About select-freeboxos-docker
 
-#### 🟡 Mode distant sécurisé
-- Exécution possible depuis des réseaux externes
-- **HTTPS obligatoire**
-- Communications chiffrées
-- Risque maîtrisé
+select-freeboxos-docker runs **select-freeboxos inside a Docker container**.
 
-Ce mode est requis si l’ordinateur est portable ou utilisé en déplacement.
+👉 It:
 
-#### 🔴 Mode distant non sécurisé (déconseillé / bloqué)
-- Connexion HTTP depuis Internet ou un réseau public
-- Exposition possible du mot de passe administrateur
+- connects to **Freebox OS**
+- automatically **schedules recordings**
+- lets the Freebox handle the recording
 
-Ce mode est **automatiquement bloqué** par le programme.
+---
 
-### Protection automatique
+## ⚡ Key features
 
-Par défaut, le programme active un **mode de sécurité stricte** :
+- 🐳 Docker-based (portable & isolated)
+- 📡 Automatic recording scheduling via Freebox OS
+- 💾 Record directly on Freebox internal or USB storage
+- 🤖 Browser automation (Selenium)
+- 🔄 Runs continuously via Docker container
+- ⚙️ Fully automated once configured
 
-- Les connexions HTTP sont autorisées uniquement lorsque la Freebox
-résout vers une adresse IP privée (réseau local).
-- Si l’adresse détectée est publique et que HTTPS est désactivé,
-le programme s’arrête pour éviter l’exposition du mot de passe.
-(END)
+---
+
+## 🧩 How it works
+
+Search → Match → Schedule (Freebox OS) → Record → Watch
+
+---
+
+## 🏠 Freebox OS integration
+
+This application uses the **recording feature of Freebox OS**.
+
+- Recordings are stored on the Freebox
+- No local video storage required
+
+---
+
+## 🐳 Why Docker?
+
+Use this version if you want:
+
+- a **portable setup**
+- no dependency conflicts
+- the same behavior on Linux and Windows
+- an isolated environment
+
+💡 The container uses a lightweight Ubuntu system (~200MB RAM idle).
+
+---
+
+## 🔄 Runtime behavior
+
+The Docker container runs continuously.
+
+- Linux: container runs via Docker Engine
+- Windows: container runs via Docker Desktop
+
+👉 Important:
+
+- Docker must start automatically with your system
+- The container is configured with `--restart always`
+- No manual execution is required after setup
+
+💡 This ensures recordings are always scheduled without interruption.
+
+---
+
+## 📁 Data persistence
+
+Configuration and data are stored on the host using mounted volumes:
+
+- Linux:
+  - ~/.config/media-free-docker
+  - ~/.local/share/media-free-docker
+
+- Windows:
+  - %LOCALAPPDATA%\media-free-docker
+
+---
+
+## ⚡ Installation
+
+### Requirements
+
+- Docker (Engine on Linux / Desktop on Windows)
+- Freebox OS (version ≥ 4.7)
+- Account on https://www.media-select.fr
+
+---
+
+## 🐧 Linux setup
+
+### Pull image
+
+docker pull mediaselect/select-freeboxos:v3.1.0
+
+---
+
+### Create volumes
+
+mkdir -p ~/.config/media-free-docker ~/.local/share/media-free-docker
+
+sudo chown -R 1200:1201 ~/.local/share/media-free-docker ~/.config/media-free-docker
+
+---
+
+### Run container
+
+docker run -d \
+--mount type=bind,source=/home/$USER/.config/media-free-docker,target=/home/seluser/.config/select_freeboxos \
+--mount type=bind,source=/home/$USER/.local/share/media-free-docker,target=/home/seluser/.local/share/select_freeboxos \
+-e SE_START_VNC=false \
+--restart always \
+--shm-size="2g" \
+--name freeboxos_select \
+mediaselect/select-freeboxos:v3.1.0
+
+---
+
+## 🪟 Windows setup
+
+### Run container
+
+docker run -d `
+--mount type=bind,source="$env:LOCALAPPDATA\media-free-docker\config",target="/home/seluser/.config/select_freeboxos" `
+--mount type=bind,source="$env:LOCALAPPDATA\media-free-docker",target="/home/seluser/.local/share/select_freeboxos" `
+-e SE_START_VNC=false `
+--restart always `
+--shm-size="2g" `
+--name freeboxos_select `
+mediaselect/select-freeboxos:v3.1.0
+
+---
+
+## ⚙️ Configuration
+
+Enter the container:
+
+docker exec -u seluser -it freeboxos_select bash
+
+Run setup:
+
+source /home/seluser/.venv/bin/activate && python3 install.py
+
+Then:
+
+- Enter your Freebox OS admin password
+- Enter your MEDIA-select credentials
+
+---
+
+## 🔐 Security
+
+This application interacts with **Freebox OS using your admin credentials**.
+
+### 🟢 Local usage (recommended)
+
+- Runs on a device within your home network
+- Connects directly to your Freebox using local addresses (e.g. `192.168.1.254`, `mafreebox.freebox.fr`)
+- HTTP is allowed only in this context
+
+### 🟡 Remote usage (secure)
+
+- Remote access is possible **only with HTTPS enabled**
+- Connections over HTTP outside the local network are **blocked automatically**
+- A warning is displayed when a remote connection is detected
+
+### 🔴 Unsafe configurations
+
+- Remote HTTP connections are **blocked by the application**
+- This prevents exposure of your Freebox admin credentials
+
+---
+
+💡 By default, the application enforces security rules based on the network context.
+
+## ⏳ What to expect
+
+- ❌ No immediate results
+- ⏳ Wait for matches
+- 🎯 Recordings are scheduled automatically
+- 📼 Videos are recorded by the Freebox
+
+---
+
+## 🤔 When should you use select-freeboxos-docker?
+
+Use this version if:
+
+- you want a portable setup (Linux / Windows)
+- you prefer Docker over manual installation
+- you want a continuously running system
+- you want consistent behavior across environments
+
+---
+
+## ⚠️ Limitations
+
+- Requires Docker
+- Requires Freebox OS
+- Docker must be running at system startup
+- Relies on browser automation (Selenium)
+
+---
+
+💡 Note:
+This container is designed to run continuously (not as a one-shot task),
+to ensure scheduled recordings are never missed.
+
+---
+
+## ⭐ Support
+
+If you like this project:
+
+- ⭐ Star it
+- 🔁 Share it
+- 🧠 Use it
+
+---
+
+## ⚠️ Disclaimer
+
+For personal use only.
