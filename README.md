@@ -3,6 +3,10 @@
 > 🐳 Run Freebox recording automation anywhere with Docker
 > 🎯 Automatically schedule TV recordings via Freebox OS
 
+![Demo](docs/demo-select-freeboxos.gif)
+
+---
+
 ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
 ![Platform](https://img.shields.io/badge/Platform-Linux-lightgrey)
 ![Architecture](https://img.shields.io/badge/Arch-ARM%20%7C%20x86%20(Docker)-orange)
@@ -140,28 +144,35 @@ Configuration and data are stored on the host using mounted volumes:
 
 ### Pull image
 
+```bash id="docker-pull"
 docker pull mediaselect/select-freeboxos:v3.1.0
+```
 
 ---
 
 ### Create volumes
 
+```bash id="volumes"
 mkdir -p ~/.config/media-free-docker ~/.local/share/media-free-docker
 
 sudo chown -R 1200:1201 ~/.local/share/media-free-docker ~/.config/media-free-docker
+```
 
 ---
 
 ### Run container
 
+```bash id="docker-linux"
 docker run -d \
 --mount type=bind,source=/home/$USER/.config/media-free-docker,target=/home/seluser/.config/select_freeboxos \
 --mount type=bind,source=/home/$USER/.local/share/media-free-docker,target=/home/seluser/.local/share/select_freeboxos \
 -e SE_START_VNC=false \
 --restart always \
 --shm-size="2g" \
+--network host \
 --name freeboxos_select \
 mediaselect/select-freeboxos:v3.1.0
+```
 
 ---
 
@@ -169,6 +180,7 @@ mediaselect/select-freeboxos:v3.1.0
 
 ### Run container
 
+```bash id="docker-windows"
 docker run -d `
 --mount type=bind,source="$env:LOCALAPPDATA\media-free-docker\config",target="/home/seluser/.config/select_freeboxos" `
 --mount type=bind,source="$env:LOCALAPPDATA\media-free-docker",target="/home/seluser/.local/share/select_freeboxos" `
@@ -177,6 +189,7 @@ docker run -d `
 --shm-size="2g" `
 --name freeboxos_select `
 mediaselect/select-freeboxos:v3.1.0
+```
 
 ---
 
@@ -184,11 +197,15 @@ mediaselect/select-freeboxos:v3.1.0
 
 Enter the container:
 
+```bash id="docker-exec"
 docker exec -u seluser -it freeboxos_select bash
+```
 
 Run setup:
 
+```bash id="install"
 source /home/seluser/.venv/bin/activate && python3 install.py
+```
 
 Then:
 
