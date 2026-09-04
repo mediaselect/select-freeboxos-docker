@@ -1,4 +1,4 @@
-# 📺 select-freeboxos-docker v3.1.0
+# 📺 select-freeboxos-docker v3.1.1
 
 > 🐳 Run Freebox recording automation anywhere with Docker
 > 🎯 Automatically schedule TV recordings via Freebox OS
