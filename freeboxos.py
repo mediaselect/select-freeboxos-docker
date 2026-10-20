@@ -397,6 +397,9 @@ try:
         last_channel = "x/x"
         start_last = None
 
+        processed = []  # programmes really saved on the Freebox
+        aborted = False
+
         for video in data:
             n += 1
 
@@ -463,8 +466,8 @@ try:
                         "de pouvoir clicker sur le bouton programmer un "
                         "enregistrement."
                     )
-                    driver.quit()
-                    sys.exit(1)
+                    aborted = True
+                    break
                 sleep(3)
                 channel_uuid = driver.find_element("name", "channel_uuid")
                 sleep(1)
@@ -614,6 +617,7 @@ try:
                                 validate_video_title(video["title"]),
                             )
                             if not close_error_popup(driver, "trop longue"):
+                                aborted = True
                                 break  # popup stuck, next clicks would fail
                             sleep(1)
                             cancel_record(driver)
@@ -628,9 +632,11 @@ try:
                                 "pu être réalisée. Merci de vérifier si le disque "
                                 "dur n'est pas plein."
                             )
+                            aborted = True
                             break
                         except NoSuchElementException:
                             pass
+                        processed.append(video)   # reached only if saved correctly
                 else:
                     cancel_record(driver)
 
@@ -638,8 +644,15 @@ try:
         driver.quit()
 
         src_file = os.path.join(os.path.expanduser("~"), ".local", "share", "select_freeboxos", "info_progs.json")
-        dst_file = os.path.join(os.path.expanduser("~"), ".local", "share", "select_freeboxos", "info_progs_last.json")
-        shutil.copy(src_file, dst_file)
+        last_file = os.path.join(os.path.expanduser("~"), ".local", "share",
+                                 "select_freeboxos", "info_progs_last.json")
+        if not aborted:
+            shutil.copy(src_file, last_file)
+        else:
+            # keep only what is known as done, so the rest is retried on the next day's run
+            done = [v for v in data_info_progs if v in data_last or v in processed]
+            with open(last_file, "w", encoding="utf-8") as f:
+                json.dump(done, f, ensure_ascii=False)
 except Exception as e:
     logger.error("An unexpected error occurred:")
     logger.error("Exception type: %s", type(e).__name__)
