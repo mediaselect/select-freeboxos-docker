@@ -241,6 +241,16 @@ def close_error_popup(driver, message_text):
         return False
 
 
+def save_progress(path, already_done, processed):
+    """Atomically write the list of programmes known to be recorded."""
+    done = list(already_done)
+    done += [v for v in processed if v not in done]
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(done, f, ensure_ascii=False)
+    os.replace(tmp, path)
+
+
 if SENTRY_MONITORING_SDK:
     sentry_sdk.init(
         dsn="https://d8f2365db01e2b4afbb4a25f1157ec67@o4508778574381056.ingest.de.sentry.io/4508868363026512",
@@ -398,6 +408,9 @@ try:
         start_last = None
 
         processed = []  # programmes really saved on the Freebox
+        src_file = os.path.join(os.path.expanduser("~"), ".local", "share", "select_freeboxos", "info_progs.json")
+        last_file = os.path.join(os.path.expanduser("~"), ".local", "share",
+                                 "select_freeboxos", "info_progs_last.json")
         aborted = False
 
         for video in data:
@@ -637,22 +650,19 @@ try:
                         except NoSuchElementException:
                             pass
                         processed.append(video)   # reached only if saved correctly
+                        save_progress(last_file, data_last, processed)
                 else:
                     cancel_record(driver)
 
         sleep(6)
         driver.quit()
 
-        src_file = os.path.join(os.path.expanduser("~"), ".local", "share", "select_freeboxos", "info_progs.json")
-        last_file = os.path.join(os.path.expanduser("~"), ".local", "share",
-                                 "select_freeboxos", "info_progs_last.json")
         if not aborted:
             shutil.copy(src_file, last_file)
         else:
-            # keep only what is known as done, so the rest is retried on the next day's run
-            done = [v for v in data_info_progs if v in data_last or v in processed]
-            with open(last_file, "w", encoding="utf-8") as f:
-                json.dump(done, f, ensure_ascii=False)
+            # abort: keep only the known-recorded programmes and refresh the
+            # file's modification date so the launcher does not retry today
+            save_progress(last_file, data_last, processed)
 except Exception as e:
     logger.error("An unexpected error occurred:")
     logger.error("Exception type: %s", type(e).__name__)
